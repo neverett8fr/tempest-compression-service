@@ -1,0 +1,27 @@
+# TODO: create docker-compose file
+
+version: '3.7'
+services:
+  api:
+    depends_on:
+    - postgres
+    build: .
+    ports:
+    - "8080:8080"
+  postgres:
+    image: postgres:14.5
+    restart: always
+    environment:
+    - POSTGRES_DB=user_db
+    - POSTGRES_USER=service
+    - POSTGRES_PASSWORD=${USER_DB_SERVICE_PASS}
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+    - '5432:5432'
+    volumes: 
+    - ./db-data/:/var/lib/postgresql/data/
+    # copy the sql script to create tables
+    - ./db/migrations/0_init.up.sql:/docker-entrypoint-initdb.d/0_init.up.sql
