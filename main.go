@@ -10,9 +10,9 @@ import (
 )
 
 // Route declaration
-func getRoutes() *mux.Router {
+func getRoutes(conf config.Config) *mux.Router {
 	r := mux.NewRouter()
-	application.NewCompressionInformation(r)
+	application.NewRoutes(r, conf)
 
 	return r
 }
@@ -26,7 +26,7 @@ func main() {
 	}
 	log.Println("config initialised")
 
-	router := getRoutes()
+	router := getRoutes(*conf)
 	log.Println("API routes retrieved")
 
 	err = cmd.StartServer(&conf.Service, router)

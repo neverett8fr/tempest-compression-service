@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func NewCompressionInformation(r *mux.Router) {
+func newCompressionInformation(r *mux.Router) {
 	r.HandleFunc("/test/{text}", testHandler).Methods("GET")
 }
 
