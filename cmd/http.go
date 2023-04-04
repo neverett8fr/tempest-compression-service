@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"tempest-user-service/pkg/config"
+	"tempest-compression-service/pkg/config"
 	"time"
 
 	"github.com/gorilla/mux"

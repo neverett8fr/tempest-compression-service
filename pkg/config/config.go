@@ -17,18 +17,8 @@ type Service struct {
 	Port int    `yaml:"port"`
 }
 
-type DB struct {
-	Driver   string `yaml:"driver"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Name     string `yaml:"name"`
-}
-
 type Config struct {
-	Service Service `yaml:"user-service-config"`
-	DB      DB      `yaml:"user-db-config"`
+	Service Service `yaml:"compression-service-config"`
 }
 
 func Initialise() (*Config, error) {

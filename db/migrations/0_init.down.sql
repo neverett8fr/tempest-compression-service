@@ -1,2 +1,0 @@
-DROP EXTENSION pgcrypto;
-DROP TABLE IF EXISTS users();

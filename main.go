@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"tempest-user-service/cmd"
-	application "tempest-user-service/pkg/application/service"
-	"tempest-user-service/pkg/config"
+	"tempest-compression-service/cmd"
+	application "tempest-compression-service/pkg/application/service"
+	"tempest-compression-service/pkg/config"
 
 	"github.com/gorilla/mux"
 )
@@ -12,7 +12,7 @@ import (
 // Route declaration
 func getRoutes() *mux.Router {
 	r := mux.NewRouter()
-	application.NewUserInformation(r)
+	application.NewCompressionInformation(r)
 
 	return r
 }
@@ -25,21 +25,6 @@ func main() {
 		return
 	}
 	log.Println("config initialised")
-
-	serviceDB, err := cmd.OpenDB(&conf.DB)
-	if err != nil {
-		log.Fatalf("error starting db, err %v", err)
-		return
-	}
-	defer serviceDB.Close()
-	log.Println("connection to DB setup")
-
-	err = cmd.MigrateDB(serviceDB, conf.DB.Driver)
-	if err != nil {
-		log.Fatalf("error running DB migrations, %v", err)
-		return
-	}
-	log.Println("DB migrations ran")
 
 	router := getRoutes()
 	log.Println("API routes retrieved")

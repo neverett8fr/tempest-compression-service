@@ -3,7 +3,7 @@
 ## Build
 FROM golang:1.19.2-buster AS builder
 
-WORKDIR /tempest-user-service
+WORKDIR /tempest-compression-service
 
 COPY go.mod ./
 COPY go.sum ./
@@ -14,15 +14,15 @@ COPY config/*.yaml ./
 COPY . .
 COPY *.go ./
 
-RUN go build -o /tempest-user-service
+RUN go build -o /tempest-compression-service
 
 ## Deploy
 FROM gcr.io/distroless/base-debian10
 
 WORKDIR /
 
-COPY --from=builder /tempest-user-service ./
+COPY --from=builder /tempest-compression-service ./
 
 EXPOSE 8080
 
-ENTRYPOINT ["/tempest-user-service"]
+ENTRYPOINT ["/tempest-compression-service"]
