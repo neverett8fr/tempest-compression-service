@@ -1,6 +1,3 @@
 compression-service-config:
   host: "0.0.0.0"
   port: 8080
-data-service:
-  host: ${DATA_SERVICE_HOST}
-  port: ${DATA_SERVICE_PORT}

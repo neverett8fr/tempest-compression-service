@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"tempest-compression-service/pkg/config"
@@ -40,6 +41,18 @@ func writeReponse(w http.ResponseWriter, r *http.Request, body interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 
 	_, err = w.Write(reponseBody)
+	if err != nil {
+		log.Printf("error writing response, err %v", err)
+	}
+}
+
+func writeFile(w http.ResponseWriter, body []byte) {
+
+	// Set the response headers
+	w.Header().Set("Content-Type", compression.GetFileType(body))
+	w.Header().Set("Content-Length", fmt.Sprintf("%v", len(body)))
+
+	_, err := w.Write(body)
 	if err != nil {
 		log.Printf("error writing response, err %v", err)
 	}
