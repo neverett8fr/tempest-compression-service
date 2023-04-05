@@ -1,8 +1,10 @@
 package service
 
 import (
-	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+	"tempest-compression-service/pkg/infra/compression"
 
 	"github.com/gorilla/mux"
 )
@@ -16,30 +18,50 @@ func decompress(w http.ResponseWriter, r *http.Request) {
 
 	// post request from data-service
 	// with body in bytes
-	var body []byte
-	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	uncompressedBody, err := CompressionProvider.Decompress(body)
+	// Read the request body into a byte slice
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeFile(w, []byte("error reading body"))
+		return
+	}
+	defer r.Body.Close()
+
+	decompressedBody, err := CompressionProvider.Decompress(body)
 	if err != nil {
 		writeFile(w, []byte("error decompressing"))
 		return
 	}
 
-	writeFile(w, uncompressedBody)
+	// Set the appropriate content type and content length headers
+	w.Header().Set("Content-Type", compression.GetFileType(decompressedBody))
+	w.Header().Set("Content-Length", fmt.Sprintf("%v", len(decompressedBody)))
+
+	writeFile(w, decompressedBody)
 }
 
 func compress(w http.ResponseWriter, r *http.Request) {
 
 	// post request from data-service
 	// with body in bytes
-	var body []byte
-	_ = json.NewDecoder(r.Body).Decode(&body)
 
-	uncompressedBody, err := CompressionProvider.Compress(body)
+	// Read the request body into a byte slice
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		writeFile(w, []byte("error decompressing"))
+		writeFile(w, []byte("error reading body"))
+		return
+	}
+	defer r.Body.Close()
+
+	compressedBody, err := CompressionProvider.Compress(body)
+	if err != nil {
+		writeFile(w, []byte("error compressing"))
 		return
 	}
 
-	writeFile(w, uncompressedBody)
+	// Set the appropriate content type and content length headers
+	w.Header().Set("Content-Type", compression.GetFileType(compressedBody))
+	w.Header().Set("Content-Length", fmt.Sprintf("%v", len(compressedBody)))
+
+	writeFile(w, compressedBody)
 }
