@@ -20,6 +20,7 @@ func NewRoutes(r *mux.Router, conf config.Config) {
 	// initialise provider
 	cp, err := compression.InitialiseCompressionProvider(
 		context.Background(),
+		conf.ML,
 	)
 	if err != nil {
 		log.Printf("error initialising compression provider, err %v", err)
