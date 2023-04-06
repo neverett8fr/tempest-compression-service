@@ -17,8 +17,15 @@ type Service struct {
 	Port int    `yaml:"port"`
 }
 
+type ML struct {
+	Host  string `yaml:"host"`
+	Port  int    `yaml:"port"`
+	UseML bool   `yaml:"use-ml"`
+}
+
 type Config struct {
 	Service Service `yaml:"compression-service-config"`
+	ML      ML      `yaml:"ml-service"`
 }
 
 func Initialise() (*Config, error) {
