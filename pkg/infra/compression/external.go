@@ -18,13 +18,15 @@ type expectedMLResponse struct {
 func fileToMLNum(in string) int {
 	// https://github.com/neverett8fr/tempest-compression-decision-tree-proof-of-concept/blob/main/files_to_compress/file_type_mapping_num
 	mp := map[string]int{
-		"unknown":    0,
-		"text/plain": 1,
-		"image/png":  2,
-		"image/jpeg": 3,
+		"unknown":                   0,
+		"text/plain; charset=utf-8": 1,
+		"text/plain":                1,
+		"image/png":                 2,
+		"image/jpeg":                3,
 	}
+	val := mp[in]
 
-	return mp[in]
+	return val
 }
 
 // "convert" - convert either to compressed, or uncompressed
