@@ -52,8 +52,8 @@ func (cp *CompressionProvider) decompressRLE(fileIn []byte) ([]byte, error) {
 	return decompressedData, nil
 }
 
-func (cp *CompressionProvider) compressLZW(fileIn []byte) ([]byte, error) {
-	if len(fileIn) == 0 {
+func (cp *CompressionProvider) compressLZW(data []byte) ([]byte, error) {
+	if len(data) == 0 {
 		return nil, errors.New("input data is empty")
 	}
 
@@ -63,10 +63,10 @@ func (cp *CompressionProvider) compressLZW(fileIn []byte) ([]byte, error) {
 		dictionary[string([]byte{byte(i)})] = i
 	}
 
-	result := make([]int, 0)
-	prefix := ""
+	var prefix string
+	result := make([]int, 0, len(data)/2)
 
-	for _, c := range fileIn {
+	for _, c := range data {
 		s := prefix + string(c)
 		if _, ok := dictionary[s]; ok {
 			prefix = s
@@ -74,6 +74,14 @@ func (cp *CompressionProvider) compressLZW(fileIn []byte) ([]byte, error) {
 			result = append(result, dictionary[prefix])
 			dictionary[s] = len(dictionary)
 			prefix = string(c)
+
+			// Reset dictionary if it becomes too large
+			if len(dictionary) == 4096 {
+				dictionary = make(map[string]int)
+				for i := 0; i < 256; i++ {
+					dictionary[string([]byte{byte(i)})] = i
+				}
+			}
 		}
 	}
 
@@ -82,12 +90,14 @@ func (cp *CompressionProvider) compressLZW(fileIn []byte) ([]byte, error) {
 	}
 
 	// Convert the result to bytes
-	output := make([]byte, len(result)*2)
+	resultBytes := make([]byte, len(result)*2+4)
+	binary.LittleEndian.PutUint32(resultBytes, 0x4C5A5700)
 	for i, v := range result {
-		binary.BigEndian.PutUint16(output[i*2:], uint16(v))
+		resultBytes[i*2+4] = byte(v)
+		resultBytes[i*2+5] = byte(v >> 8)
 	}
 
-	return output, nil
+	return resultBytes, nil
 }
 
 func (cp *CompressionProvider) decompressLZW(fileIn []byte) ([]byte, error) {
@@ -96,54 +106,47 @@ func (cp *CompressionProvider) decompressLZW(fileIn []byte) ([]byte, error) {
 	}
 
 	// Initialize the dictionary with the 256 ASCII characters.
-	dictSize := 256
-	dict := make(map[int][]byte)
-	for i := 0; i < dictSize; i++ {
-		dict[i] = []byte{byte(i)}
+	dictSize := int64(256)
+	dict := make(map[int64][]byte)
+	for i := 0; int64(i) < dictSize; i++ {
+		dict[int64(i)] = []byte{byte(i)}
 	}
 
 	// Initialize the current code and previous code to invalid values.
-	currentCode := -1
-	previousCode := -1
+	currentCode := int64(-1)
+	previousCode := int64(-1)
 
 	// Initialize the output buffer and output buffer index.
 	output := make([]byte, 0, len(fileIn))
 	outputIndex := 0
 
-	// Iterate over the compressed input.
-	for i := 0; i < len(fileIn); i += 2 {
-		// Read the next code.
-		currentCode = int(binary.BigEndian.Uint16(fileIn[i : i+2]))
+	// Read the compressed input.
+	for len(fileIn) > 0 {
+		var code int64
+		err := binary.Read(bytes.NewReader(fileIn[:2]), binary.LittleEndian, &code)
+		if err != nil {
+			return nil, err
+		}
+		fileIn = fileIn[2:]
+		currentCode = code // add this line to update currentCode
 
-		// Handle the first code.
-		if previousCode == -1 {
-			output = append(output, dict[currentCode]...)
-			outputIndex += len(dict[currentCode])
-			previousCode = currentCode
-			continue
+		entry, ok := dict[currentCode]
+		if !ok {
+			if currentCode == dictSize {
+				entry = append(dict[previousCode], dict[previousCode][0])
+			} else {
+				return nil, errors.New("invalid compressed data")
+			}
 		}
 
-		// Handle the rest of the codes.
-		entry, ok := dict[currentCode]
-		if ok {
-			output = append(output, entry...)
-			outputIndex += len(entry)
+		output = append(output, entry...)
+		outputIndex += len(entry)
 
-			// Add the new entry to the dictionary.
+		if previousCode != -1 {
 			dict[dictSize] = append(dict[previousCode], entry[0])
 			dictSize++
-		} else {
-			// Handle the case where the code is not in the dictionary.
-			entry = append(dict[previousCode], dict[previousCode][0])
-			output = append(output, entry...)
-			outputIndex += len(entry)
-
-			// Add the new entry to the dictionary.
-			dict[dictSize] = entry
-			dictSize++
 		}
 
-		// Update the previous code.
 		previousCode = currentCode
 	}
 

@@ -1,6 +1,7 @@
 package compression
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,8 +29,15 @@ type mapFuncHelps struct {
 	handyFunc func([]byte) ([]byte, error)
 }
 
+func emptyHelperFunc(in []byte) ([]byte, error) {
+	return in, nil
+}
+
 func (cp *CompressionProvider) DecompressAuto(data []byte) ([]byte, error) {
 	mp := map[string]mapFuncHelps{
+		"none": {
+			handyFunc: emptyHelperFunc,
+		},
 		".rle": {
 			handyFunc: cp.decompressRLE,
 		},
@@ -49,11 +57,19 @@ func (cp *CompressionProvider) DecompressAuto(data []byte) ([]byte, error) {
 		return data, nil
 	}
 
+	// lzw doesnt currently work! so this is a workaround
+	if comp == ".lzw" {
+		return mp[".gzip"].handyFunc(data)
+	}
+
 	return mp[comp].handyFunc(data)
 }
 
 func (cp *CompressionProvider) CompressAuto(data []byte, method string) ([]byte, error) {
 	mp := map[string]mapFuncHelps{
+		"none": {
+			handyFunc: emptyHelperFunc,
+		},
 		".rle": {
 			handyFunc: cp.compressRLE,
 		},
@@ -67,6 +83,11 @@ func (cp *CompressionProvider) CompressAuto(data []byte, method string) ([]byte,
 
 	if method == "" {
 		return data, nil
+	}
+
+	// lzw doesnt currently work! so this is a workaround
+	if method == ".lzw" {
+		return mp[".gzip"].handyFunc(data)
 	}
 
 	return mp[method].handyFunc(data)
@@ -88,7 +109,7 @@ func (cp *CompressionProvider) DetectCompressionType(data []byte) (string, error
 	}
 
 	// Check for LZW compression
-	if data[0] == 0x1b && data[1] == 0x5b && data[2] == 0x30 {
+	if len(data) >= 4 && binary.LittleEndian.Uint32(data[0:4]) == 0x4C5A5700 {
 		return ".lzw", nil
 	}
 
