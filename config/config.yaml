@@ -1,7 +1,7 @@
 compression-service-config:
   host: "0.0.0.0"
-  port: 8080
+  port: 8082
 ml-service:
-  host: http://localhost
-  port: 8000
+  host: ${DECIDER_SERVICE_HOST}
+  port: ${DECIDER_SERVICE_PORT}
   use-ml: true
